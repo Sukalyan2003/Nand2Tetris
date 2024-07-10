@@ -1,0 +1,40 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/3/a/PC.hdl
+/**
+ * A 16-bit counter.
+ * if      reset(t): out(t+1) = 0
+ * else if load(t):  out(t+1) = in(t)
+ * else if inc(t):   out(t+1) = out(t) + 1
+ * else              out(t+1) = out(t)
+ */
+CHIP PC {
+    IN in[16], reset, load, inc;
+    OUT out[16];
+    
+    PARTS:
+    //// Replace this comment with your code.
+
+    /* There are 8 possible combinations for the three input variables
+    in the order Reset | load | inc:
+    000 - in
+    001 - in+1
+    010 - in load
+    011 - in load
+    100 - 0
+    101 - 0 
+    110 - 0 
+    111 - 0 
+    */
+
+/*
+    Alternative approach just adds the following two lines and changes register load to c2
+    Or(a=reset,b=load,out=c1);
+    Or(a=c1,b=inc,out=c2);
+    I am not sure exactly why both work.
+*/
+    Register(in= c0, load= true, out=out,out=reg);
+    Inc16(in= reg, out=increg);
+    Mux8Way16(a= in, b= increg, c= in, d= in, e=false , f= false, g= false, h= false, sel[2]= reset,sel[1] = load,sel[0] = inc, out= c0);
+}
