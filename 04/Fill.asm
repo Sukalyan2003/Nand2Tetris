@@ -1,0 +1,49 @@
+(OUTER)
+    @KBD
+    D=M
+    @WHITE
+    D;JEQ
+    @BLACK
+    D;JNE
+
+    (WHITE)
+        @color
+        M=0
+        @FILL
+        0;JMP
+        
+    (BLACK)
+        @color
+        M=-1
+        @FILL
+        0;JMP
+
+    //
+    (FILL)
+        @SCREEN
+        D=A
+        @i
+        M=D
+        @count
+        M=0
+        (INNER)
+            @color
+            D=M
+            @i
+            A=M
+            M=D
+            @i
+            M=M+1
+            @count
+            M=M+1
+            @8192
+            D=A
+            @count
+            D=M-D
+            @INNER
+            D;JNE
+    @OUTER
+    0;JMP
+(END)
+	@END
+	0;JMP
