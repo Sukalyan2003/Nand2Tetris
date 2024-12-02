@@ -1,0 +1,87 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/5/CPU.hdl
+/**
+ * The Hack Central Processing unit (CPU).
+ * Parses the binary code in the instruction input and executes it according to the
+ * Hack machine language specification. In the case of a C-instruction, computes the
+ * function specified by the instruction. If the instruction specifies to read a memory
+ * value, the inM input is expected to contain this value. If the instruction specifies
+ * to write a value to the memory, sets the outM output to this value, sets the addressM
+ * output to the target address, and asserts the writeM output (when writeM = 0, any
+ * value may appear in outM).
+ * If the reset input is 0, computes the address of the next instruction and sets the
+ * pc output to that value. If the reset input is 1, sets pc to 0.
+ * Note: The outM and writeM outputs are combinational: they are affected by the
+ * instruction's execution during the current cycle. The addressM and pc outputs are
+ * clocked: although they are affected by the instruction's execution, they commit to
+ * their new values only in the next cycle.
+ */
+CHIP CPU {
+
+    IN  inM[16],         // M value input  (M = contents of RAM[A])
+        instruction[16], // Instruction for execution
+        reset;           // Signals whether to re-start the current
+                         // program (reset==1) or continue executing
+                         // the current program (reset==0).
+
+    OUT outM[16],        // M value output
+        writeM,          // Write to M? 
+        addressM[15],    // Address in data memory (of M)
+        pc[15];          // address of next instruction
+
+    PARTS:
+	//// Replace this comment with your code.
+    // The ALU
+    ALU(x= outD, y= outAM, zx= instruction[11], nx= instruction[10], zy= instruction[9], ny= instruction[8], f= instruction[7], no=instruction[6] , out=outALU,out=outM , zr=zr, ng=ng);
+
+    // Register logic
+    ARegister(in=inA, load=loadA, out=outA,out[0..14]=addressM);
+    DRegister(in=outALU, load=loadD, out=outD);
+    PC(in=outA, load=loadPC, inc=true, reset=reset, out[0..14]=pc); // Why is inc always true?
+    
+    // Mux logic
+    Mux16(a=instruction,b=outALU,sel=instruction[15],out=inA); // selA is supposed to be the MSB of the instruction
+    Mux16(a=outA, b=inM, sel=selAM, out=outAM); // selAM is the 4th bit of the instruction from MSB
+    And(a=instruction[12], b=instruction[15], out=selAM);
+
+    // Further logic to decide all the load bits. 
+    And(a=instruction[15], b=instruction[4], out=loadD); // Not exactly sure why we are comparing with MSB instead of setting a=1
+    And(a=instruction[15], b=instruction[5], out=destA); // Same as above
+    Or(a=false, b= destA, out=loadA );
+
+
+    // Jump logic
+    // is a C instruction so instruction[15] will be 1
+    // JGT means it will be a +ve number hence ng should be 0
+    Or(a=zr, b=ng, out=state1);
+    Not(in=state1, out=pos);// this tells us whether positive or not
+    And(a=instruction[0], b=pos, out=JGT);
+    //JEQ means it will be 0 hence zr should be 1
+    And(a=zr, b=instruction[1], out=JEQ);
+    // JLT means it will be a -ve number hence ng should be 1
+    And(a=ng, b=instruction[2], out=JLT);
+    //JGE
+    Or(a=JGT, b=JEQ, out=JGE);
+    // JNE
+    Not(in=JEQ, out=JNE);
+    // JLE
+    Or(a=JEQ, b=JLT, out=JLE);
+    //JMP
+    Or(a=JLE, b=JGT, out=JMP);
+
+    // Now we do a cascading OR gates to decide the jump
+    Or(a=JGT, b=JEQ, out=j1);
+    Or(a=j1, b=JLT, out=j2);
+    Or(a=j2, b=JGE, out=j3);
+    Or(a=j3, b=JNE, out=j4);
+    Or(a=j4, b=JLE, out=j5);
+    Or(a=j5, b=JMP, out=jump);
+    And(a=instruction[15], b=jump, out=loadPC); // Is there any way to refactor this code into something better? This is from the video i was watching as hints
+
+    And(a=instruction[15], b=instruction[3], out=writeM); // This is the writeM bit
+    
+
+
+}

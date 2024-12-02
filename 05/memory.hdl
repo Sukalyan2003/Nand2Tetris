@@ -1,0 +1,28 @@
+CHIP Memory {
+    IN in[16], load, address[15];
+    OUT out[16];
+
+    PARTS:
+	//// Replace this comment with your code.
+    // Firstly, this is my 10th attempt at this i guess. No amount of head banging or AI helped.
+    // I had most of the logic figured out but always got stumped in the parts to choose.
+    // Took me a glance at parts used from a solution repo, but I decided all the connections myself. 
+    
+    // This decides whether to load the ram or the screen
+    // Because if the MSB is 1 then it's more than 16k thus enters the Screen locations
+    // If it is zero then the RAM is to be accessed.
+
+    DMux(in= load, sel= address[14], a= loadRAM, b=loadScreen);
+
+    RAM16K(in=in, load=loadRAM, address=address[0..13],out=ramOut);
+    Screen(in=in, load=loadScreen, address=address[0..12],out=screenOut);
+    Keyboard(out=keyboardOut);
+
+    // For the following two bit combinations we realize that
+    // 00 = Within the scope of RAM16K
+    // 01 = Still within the scope of RAM16K
+    // 10 = This is when the scope of RAM is finished but the scope of screen is still there
+    // 11 = Both the RAM and screen is superceded, so we output the Keyboard. 
+    Mux4Way16(a= ramOut, b= ramOut, c= screenOut, d= keyboardOut, sel=address[13..14], out=out);
+       
+}
